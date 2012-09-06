@@ -5,10 +5,12 @@
 !TIL_MAIN_DEBUG = 0
 
 もし、TIL_MAIN_DEBUGならば、
+	Fpsadjuster→SetFPS(60)
+	
 	(1)間
 		画面クリア
-		10,10へFpsadjuster→FRAME_SUMを文字表示
-		Fpsadjuster→FIXFPS(60)
+		10,10へ(Fpsadjuster→GetFPS())を文字表示
+		Fpsadjuster→Fix()
 		
 	ここまで
 
@@ -27,20 +29,32 @@
 	・FPS_cnt0{=0}
 	・FPS_ave{=0}
 	・FPS_f{=0}
-	・FIXFPS(NUM)～
-		もし、(FRAME_COUNTER==NUM)ならば、
+	・FPS{=60}
+	・GetFPS()～
+		FRAME_SUMで戻る
+	・SetFPS(val)～
+		もし、val<1ならば、
+			`FPS値は0以下に設定できません。`でエラー発生
+			終了
+		もし、FPS != valならば、
+			FPS = val
+			FRAME_AVE = ``
+			FRAME_SUM = 0
+			FRAME_COUNTER = 0
+	・Fix()～
+		もし、(FRAME_COUNTER==FPS)ならば、
 			FRAME_SUM=0;
-			(NUM)回
+			(FPS)回
 				FRAME_SUM=FRAME_SUM+FRAME_AVE[回数];
 			ここまで
-			FRAME_SUM=FRAME_SUM/NUM;
+			FRAME_SUM=FRAME_SUM/FPS;
 			FRAME_SUM=1000/FRAME_SUM
 			FRAME_COUNTER=0;
 		SPENDTIME=システム時間-SYSTEMTIME//掛けた時間
-		もし、(SPENDTIME<(1000/NUM))ならば、
+		もし、(SPENDTIME<(1000/FPS))ならば、
 			FIX_TUNE=FIX_TUNE+0.02
 			(0)秒待つ
-			((SYSTEMTIME+1000/NUM)>=(システム時間))間
+			((SYSTEMTIME+1000/FPS)>=(システム時間))間
 				Wait(FIX_TUNE)
 			ここまで
 		違えば、
@@ -48,22 +62,22 @@
 		FRAME_AVE[FRAME_COUNTER]=timeGetTime()-SYSTEMTIME//ループバックしてくるまでにかかった時間
 		SYSTEMTIME=timeGetTime();
 		FRAME_COUNTER=FRAME_COUNTER+1;
-	・FIXFPSEx({値渡し}NUM)～
+	・FixEx()～
 	    もし、ALLOW_FIX==0ならば、
 			戻る
-		もし、(FRAME_COUNTER==NUM)ならば、
+		もし、(FRAME_COUNTER==FPS)ならば、
 			FRAME_SUM=0;
-			(NUM)回
+			(FPS)回
 				FRAME_SUM=FRAME_SUM+FRAME_AVE[回数];
 			ここまで
-			FRAME_SUM=FRAME_SUM/NUM;
+			FRAME_SUM=FRAME_SUM/FPS;
 			FRAME_SUM=1000/FRAME_SUM
 			FRAME_COUNTER=0;
 		SPENDTIME=システム時間-SYSTEMTIME//掛けた時間
-		もし、(SPENDTIME<(1000/NUM))ならば、
+		もし、(SPENDTIME<(1000/FPS))ならば、
 			FIX_TUNE=FIX_TUNE+0.02
 			(0)秒待つ
-			((SYSTEMTIME+1000/NUM)>=(システム時間))間
+			((SYSTEMTIME+1000/FPS)>=(システム時間))間
 				Wait(FIX_TUNE)
 			ここまで
 			ADJUST_CNT=0
@@ -76,11 +90,11 @@
 		FRAME_AVE[FRAME_COUNTER]=timeGetTime()-SYSTEMTIME//ループバックしてくるまでにかかった時間
 		SYSTEMTIME=timeGetTime();
 		FRAME_COUNTER=FRAME_COUNTER+1;
-	・FIXFPSclassic(NUM)～
+	・FixClassic()～
 	    SPENDTIME=システム時間-SYSTEMTIME//掛けた時間
-		もし、(SPENDTIME<(1000/NUM))ならば、
+		もし、(SPENDTIME<(1000/FPS))ならば、
 			(0)秒待つ
-			((SYSTEMTIME+1000/NUM)>=(システム時間))間
+			((SYSTEMTIME+1000/FPS)>=(システム時間))間
 				Wait(50)
 			ここまで
 		SYSTEMTIME=timeGetTime();

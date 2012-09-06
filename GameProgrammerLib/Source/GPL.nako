@@ -1,423 +1,101 @@
-!TRUE			=1
-!FALSE			=0
-!NULL			=0
+!`KeyCode.nako`を取り込む。
+!`GL.nako`を取り込む。
+!`TIL.nako`を取り込む。
+!`CMFL.nako`を取り込む
 
-!SRCCOPY	=$00CC0020
-!SRCPAINT	=$00EE0086
-!SRCAND		=$008800C6
-!SRCINVERT	=$00660046
-!SRCERASE	=$00440328
-!NOTSRCCOPY	=$00330008
-!NOTSRCERASE=$001100A6
-!MERGECOPY	=$00C000CA
-!MERGEPAINT	=$00BB0226
-!PATCOPY	=$00F00021
-!PATPAINT	=$00FB0A09
-!PATINVERT	=$005A0049
-!DSTINVERT	=$00550009
-!BLACKNESS	=$00000042
-!WHITENESS	=$00FF0062
 
-!BLACKONWHITE	=1
-!WHITEONBLACK	=2
-!COLORONCOLOR	=3
-!HALFTONE		=4
+#デバッグコード
+!GPL_DEBUG = 1
 
-!WHITE_BRUSH	=0//白のブラシRGB(255,255,255)
-!LTGRAY_BRUSH	=1//淡い灰色のブラシRGB(223,223,223)
-!GRAY_BRUSH		=2//灰色のブラシRGB(192,192,192)
-!DKGRAY_BRUSH	=3//濃い灰色のブラシRGB(128,128,128)
-!BLACK_BRUSH	=4//黒のブラシRGB(0,0,0)
-!NULL_BRUSH		=5//無色のブラシ
-!WHITE_PEN		=6//白のペン
-!BLACK_PEN		=7//黒のペン
-!NULL_PEN		=8//無色のペン
-
-!LR_DEFAULTCOLOR 	=$0000
-!LR_MONOCHROME 		=$0001
-!LR_COLOR 			=$0002
-!LR_COPYRETURNORG 	=$0004
-!LR_COPYDELETEORG 	=$0008
-!LR_LOADFROMFILE 	=$0010
-!LR_LOADTRANSPARENT =$0020
-!LR_DEFAULTSIZE 	=$0040
-!LR_VGACOLOR 		=$0080
-!LR_LOADMAP3DCOLORS =$1000
-!LR_CREATEDIBSECTION=$2000
-!LR_COPYFROMRESOURCE=$4000
-!LR_SHARED 			=$8000
-
-!IMAGE_BITMAP 		=0
-!IMAGE_ICON 		=1
-!IMAGE_CURSOR 		=2
-!IMAGE_ENHMETAFILE 	=3
-
-!GPL_MAIN_DEBUG = 0
-
-もし、GPL_MAIN_DEBUGならば、
-
-	GPLInit()	# GPLを使うための初期化(描画系のみ)
-	GPLBufferScreenParam(0,0,400,200,0)		# x,y,w,h,色で、バッファスクリーンを初期化する
-	BufferScreen→InitUserColor($ff0000)	# ユーザーの任意のカラーで高速画面クリアをするための初期化 (イメージ１つ分のメモリを消費する)（オプション）
+もし、GPL_DEBUGならば、
+	GAMEをSampleMyGameとして作成
 	
-	AをGraphic_gとして作成			# ユーザーが使う際はGraphic_gを継承する
-	BをGraphic_gとして作成			# 実際にはもう少し扱いやすい名前にしようかと・・・。
-	A→Load(`Magicsquare_b.bmp`)	# メモリに画像をロードする。(bmpのみ)
-	B→Load(A→Same())				# Aと同じ画像を使ってロードする。
-	B→x = 100
+	#ゲームインスタンスをw,h,colorで初期化する。
+	GAME→Init(600,480,$ff0000)
 	
-	# バッファー画面のクリア
-	//BufferScreen→Clear() 		//127micsec	テスト環境での一回あたりの所要時間
-	//BufferScreen→WhiteClear() 	//56micsec
-	//BufferScreen→BlackClear() 	//60micsec
-	BufferScreen→UserClear()		//75micsec
+	#ゲームインスタンスを開始する。
+	GAME→Start()
 	
-	# グラフィックオブジェクトの描画
-	A→Draw()
-	B→Draw()
+	#GAME_g→Main()に処理内容をオーバーライドすることで実行する（抽象メソッド）
 	
-	# バッファを可視画面にフリップして、バッファは消去する。（DONTCLEAR==1ならば消去しない）
-	BufferScreen→Flip()
-	//BufferScreen→TransFlip($010101)
 	
-	# グラフィックオブジェクトの破棄
-	A→Delete()
-	B→Delete()
+	終了
 
-
-_INSTANTIMAGE_CNTとは整数 = 0
-●_InstantImageCreate(w,h)
-	InstantImage[_INSTANTIMAGE_CNT]をイメージとして作成
-	InstantImage[_INSTANTIMAGE_CNT]→可視 = 0
-	InstantImage[_INSTANTIMAGE_CNT]→W = w
-	InstantImage[_INSTANTIMAGE_CNT]→H = h
-	_INSTANTIMAGE_CNT = _INSTANTIMAGE_CNT + 1
-	(_INSTANTIMAGE_CNT-1)で戻る
-	
-●GPLInit()
-	BufferScreenをScreen_gとして作成
-	BufferScreen→可視 = 0
-	LoadingCamvasをScreen_gとして作成
-	LoadingCamvas→可視 = 0
-	
-
-●GPLBufferScreenParam(x,y,w,h,color)
-	BufferScreen→Set(w,h,color)
-	BufferScreen→SetXY(x,y)	
-
-●GPLExit()
-	BufferScreen→Delete()
-	
-
-■Vector_g
-	・{実数} x{=0}
-	・{実数} y{=0}
-
-■Graphic_g
-	・作る～
-		init = 1
-		xextend = 1
-		yextend = 1
-	・Check()～
-		もし、init == 0ならば、
-			`キャストエラー : 存在しないインスタンスです。`でエラー発生　# 破棄した後でもメモリが参照できてしまうので、この辺をどうするかが問題
-	・{整数} init{=0}
-	・{整数} hnd{=-1}
-	・{実数} x{=0}
-	・{実数} y{=0}
-	・{整数} w{=0}
-	・{整数} h{=0}
-	・{実数} angle{=0}
-	・{実数} xextend
-	・{実数} yextend
-	
-	・Same()～
-		dataとは配列
-		data[0] = hnd
-		data[1] = w
-		data[2] = h
-		dataで戻る
-	・Load(file)～
-		Check()
-		もし、(fileの変数型確認)==`配列`ならば、
-			hnd = file[0]
-			w = file[1]
-			h = file[2]
-			hndで戻る
-		もし、(fileの存在) == 0ならば、
-			「{file} が存在しません。」でエラー発生
-		LoadingCamvas→画像 = file
-		w = (LoadingCamvas→W)
-		h = (LoadingCamvas→H)
-		
-		hMemDCとは整数
-		hMemDC = CreateCompatibleDC(NULL)
-		//hMemDCを表示
-		
-		bmpHndとは整数
-		bmpHnd = LoadImage(NULL, file, IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR||LR_LOADFROMFILE);
-		//bmpHndを表示
-		
-		SelectObject(hMemDC,bmpHnd)
-		
-		hnd = hMemDC
-		hndで戻る
-		
-		/*
-		//bmpHndとは整数
-		//bmpHnd=LoadImage(NULL, NULL, IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR||LR_LOADFROMFILE);
-		hdcとは整数
-		hcd = GetDC(母艦ハンドル)を表示
-		hMemDCとは整数
-		hMemDC = CreateCompatibleDC(hdc)を表示
-		hBitとは整数
-		hBit = CreateCompatibleBitmap(hdc,w,h)を表示
-		SelectObject(hMemDC,hBit)を表示
-		BitBlt(h,0,0,LoadingCamvas→W,LoadingCamvas→H,(LoadingCamvas→GetHnd()),0,0,RASTERCODE)を表示
-		hnd = h
-		*/
-		
-	・Draw()～
-		Check()		
-		BitBlt((BufferScreen→GetHnd()),x,y,w,h,hnd,0,0,SRCCOPY)
-		
-	・Delete()～
-		Check()
-		w = 0
-		h = 0
-		x = 0
-		y = 0
-		angle = 0
-		xextend = 1
-		yextend = 1
-		DeleteDC(hnd)
-		hnd = -1
-		VCL_FREE(自身)
-		init = 0
-
-■Screen_g + イメージ
-	・color {=0}
-	・{整数} raster{=$00CC0020}
-	・{整数} DONTCLEAR {=0}
-	・{整数} _LASTCLEAR {=0}
-	
-	・GetHnd()～
-		ハンドルで戻る
-	・Set(w,h,Color)～
-		W = w
-		H = h
-		color = Color
-		X = 0
-		Y = 0
-	・SetXY(x,y)～
-		X = x
-		Y = y
-	・SetRaster(Raster)～
-		raster = Raster
-	・Clear()～
-		_LASTCLEAR = 0
-		自身をcolorで画面クリア
-	・_UCI{=``}
-	・InitUserColor(color)～
-		_UCI = _InstantImageCreate(W,H)
-		ColorClear(InstantImage[_UCI],color)
-	・WhiteClear()～
-		_LASTCLEAR = WHITENESS
-		BitBlt(GetHnd(),X,Y,W,H,NULL,0,0,WHITENESS)
-	・BlackClear()～
-		_LASTCLEAR = BLACKNESS
-		BitBlt(GetHnd(),X,Y,W,H,NULL,0,0,BLACKNESS)
-	・UserClear()～
-		_LASTCLEAR = SRCCOPY
-		BitBlt(GetHnd(),X,Y,W,H,(InstantImage[_UCI]→ハンドル),0,0,SRCCOPY)
-	・Delete()～
-		W = 0
-		H = 0
-		X = 0
-		Y = 0
-		color = 0
-		自身を0で画面クリア
-		VCL_FREE(自身)
-	・Flip()～
-		BitBlt((母艦の背景ハンドル),X,Y,W,H,GetHnd(),0,0,raster)
-		もし、NOT(DONTCLEAR)ならば、
-			もし、_LASTCLEAR == 0ならば、
-				自身をcolorで画面クリア
-			違えば、
-				BitBlt(GetHnd(),X,Y,W,H,(InstantImage[_UCI]→ハンドル),0,0,_LASTCLEAR)
-
-	・TransFlip(color)～
-		TransparentBlt((母艦の背景ハンドル),X,Y,W,H,GetHnd(),0,0,W,H,color)
-		もし、NOT(DONTCLEAR)ならば、
-			もし、_LASTCLEAR == 0ならば、
-				自身をcolorで画面クリア
-			違えば、
-				BitBlt(GetHnd(),X,Y,W,H,(InstantImage[_UCI]→ハンドル),0,0,_LASTCLEAR)
-
-●ColorClear({グループ}obj,color)
-	objをcolorで画面クリア
-
-●全画面クリア
-	BufferScreenを画面クリア
-	母艦を画面クリア
-
-●ClearAllScreen({=$FFFFFF}COLOR)
-	BufferScreenを(COLOR)で画面クリア
-	母艦を(COLOR)で画面クリア
-
-●ClearScreen({=$FFFFFF}COLOR)
-	母艦を(COLOR)で画面クリア
-
-●ClearBufferScreen({=$FFFFFF}COLOR)
-	BufferScreenを(COLOR)で画面クリア
-
-●BitBlt(hdcDest,nXDest,nYDest,nWidth,nHeight,hdcSrc,nXSrc,nYSrc,dwRop)=DLL("Gdi32.dll",
-"BOOL BitBlt(
-HDC hdcDest,//コピー先デバイスコンテキストのハンドル
-int nXDest,//コピー先長方形の左上隅のx座標
-int nYDest,//コピー先長方形の左上隅のy座標
-int nWidth,//コピー先長方形の幅
-int nHeight,//コピー先長方形の高さ
-HDC hdcSrc,//コピー元デバイスコンテキストのハンドル
-int nXSrc,//コピー元長方形の左上隅のx座標
-int nYSrc,//コピー元長方形の左上隅のy座標
-DWORD dwRop//ラスタオペレーションコードSRCCOPY←そのままコピー
-)")
-
-●TransparentBlt(hdcDest,nXOriginDest,nYOriginDest,nWidthDest,hHeightDest,hdcSrc,nXOriginSrc,nYOriginSrc,nWidthSrc,nHeightSrc,crTransparent)=DLL("msimg32.dll",
-"BOOL TransparentBlt(
-HDC hdcDest,		//送信先デバイスコンテキストのハンドルを指定します。
-int nXOriginDest,	//送信先長方形の左上の頂点のx座標を論理単位で指定します。
-int nYOriginDest,	//送信先長方形の左上の頂点のy座標を論理単位で指定します。
-int nWidthDest,		//送信先長方形の幅を論理単位で指定します。
-int hHeightDest,	//送信先長方形の高さのハンドルを論理単位で指定します。
-HDC hdcSrc,			//送信元のデバイスコンテキストのハンドルを指定します。
-int nXOriginSrc,	//送信元長方形のx座標を論理単位で指定します。
-int nYOriginSrc,	//送信元長方形のy座標を論理単位で指定します。
-int nWidthSrc,		//送信元長方形の幅を論理単位で指定します。
-int nHeightSrc,		//信元長方形の高さのハンドルを論理単位で指定します。
-UINT crTransparent	//透過として処理する送信元ビットマップのRGBカラーを指定します。
-)")
-
-●StretchBlt(tHDC,x,y,w,h,fHDC,xx,yy,ww,hh,raster)=DLL(`Gdi32.dll`,
-`BOOL StretchBlt(
-HDC hdcDest,		//コピー先のデバイスコンテキストのハンドル
-int nXOriginDest,	//コピー先長方形の左上隅のx座標
-int nYOriginDest,	//コピー先長方形の左上隅のy座標
-int nWidthDest,		//コピー先長方形の幅
-int nHeightDest,	//コピー先長方形の高さ
-HDC hdcSrc,			//コピー元のデバイスコンテキストのハンドル
-int nXOriginSrc,	//コピー元長方形の左上隅のx座標
-int nYOriginSrc,	//コピー元長方形の左上隅のy座標
-int nWidthSrc,		//コピー元長方形の幅
-int nHeightSrc,		//コピー元長方形の高さ
-DWORD dwRop			//ラスタオペレーションコード
-)`)
-
-●PlgBlt(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10)=DLL(`Gdi32.dll`,
-`BOOL PlgBlt(
-HDC hdcDest,//転送先のデバイスコンテキストのハンドル
-POINT *lpPoint,	//転送先平行四辺形の頂点
-HDC hdcSrc,//転送元のデバイスコンテキストのハンドル
-int nXSrc,//転送元長方形の左上隅のx座標
-int nYSrc,//転送元長方形の左上隅のy座標
-int nWidth,//転送元長方形の幅
-int nHeight,//転送元長方形の高さ
-HBITMAP hbmMask,//ビットマスクのハンドル
-int xMask,//ビットマスク長方形の左上隅のx座標
-int yMask//ビットマスク長方形の左上隅のy座標
-)`)
-
-●GetDC(hWND)=DLL("user32.dll","HDC GetDC(HWNDhwnd)")
-
-●CreateCompatibleDC(hdc) =DLL(`Gdi32.dll`,
-`HDC CreateCompatibleDC(
-  HDC hdc   // デバイスコンテキストのハンドル
-)`)
-
-●CreateCompatibleBitmap(hdc,nWidth,nHeight) =DLL(`Gdi32.dll`,
-`HBITMAP CreateCompatibleBitmap(
-HDC hdc,        // デバイスコンテキストのハンドル
-int nWidth,     // ピクセル単位のビットマップの幅
-int nHeight     // ピクセル単位のビットマップの高さ
-)`)
-
-●DeleteDC(hdc) =DLL(`Gdi32.dll`,
-`BOOL DeleteDC(
-  HDC hdc   // デバイスコンテキストのハンドル
-)`)
-
-●LoadImage(hinst,{参照渡し}lpszName,uType,cxDesired,cyDesired,fuLoad) =DLL("user32.dll",
-"HANDLE LoadImageA(
-HINSTANCE hinst, // インスタンスのハンドル
-LPCTSTR lpszName, // イメージの名前または識別子
-UINT uType, // イメージのタイプ
-int cxDesired, // 希望する幅
-int cyDesired, // 希望する高さ
-UINT fuLoad // ロードのオプション
-)")
-
-●CreateWindowEx(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12)=DLL(`user32.dll`,
-`HWND CreateWindowExA(
-    DWORD dwExStyle,
-    LPCTSTR lpClassName,
-    LPCTSTR lpWindowName,
-    DWORD dwStyle,
-    int x,
-    int y,
-    int nWidth,
-    int nHeight,
-    HWND hWndParent,
-    HMENU hMenu,
-    HINSTANCE hInstance,
-    LPVOID lpParam
-)`)
-
-●SetStretchBltMode(HDC,mode)=DLL(`Gdi32.dll`,
-`int SetStretchBltMode(
-HDC hdc,//デバイスコンテキストのハンドル
-int iStretchMode//ビットマップの伸縮モード
-)`)
-
-●SelectObject(hdc,hgdiobj)=DLL("Gdi32.dll",
-"HGDIOBJ SelectObject(
-HDC hdc,//デバイスコンテキストのハンドル
-HGDIOBJ hgdiobj//オブジェクトのハンドル
-)")
-
-●GetStockObject(fnObject)=DLL("Gdi32.dll",
-"HGDIOBJ GetStockObject(
-int fnObject//ストックオブジェクトのタイプ
-)")
 
 #-----------------------------------------------------------------------
-#API版補助関数
 
-●api_flag2color(flag)
-	もし、flag==0ならば、
-		flag=BLACKNESS
-	違えば、
-		flag=WHITENESS
-	flagで戻る
 
-●再描画()
-	InvalidateRect((母艦ハンドル),0,TRUE)
+■Size_g
+	・w
+	・h
 
-●RECT変換(x,y,w,h)
-	RECTとは整数
-	RECTに16を確保
-	RECTの1にxを`INT`でバイナリ設定
-	RECTの5にyを`INT`でバイナリ設定
-	RECTの9にwを`INT`でバイナリ設定
-	RECTの13にhを`INT`でバイナリ設定
-	RECTで戻る
+■GAME_g
+	・{Vector_g}_screenXY
+	・{Size_g}_screenWH
+	・_screencolor
+	・_ExitKey{=27}
+	・UserInit()～
+		#抽象メソッド
+		#GPLInit()が呼び出された最後に実行されます、その為GPLの機能を全て使うことができます。
+		戻る
+	・Init({参照渡し}W,{参照渡し}H,{参照渡し}color)～
+		もし、W*H < 1ならば、
+			`スクリーンは1px未満に設定できません。`でエラー発生
+		GPLInit()
+		
+		_screenWH→w = W
+		_screenWH→h = H
+		もし、母艦のスタイル==`枠なし`ならば、
+			母艦のW = W
+			母艦のH = H
+		違えば、
+			母艦のCW = W
+			母艦のCH = H
+		
+		GPLBufferScreenParam(0,0,W,H,color)
+		
+		_screencolor = color
+		もし、color!=0 && color!=16777215ならば、
+			BufferScreen→InitUserColor(color)
+		自身→UserInit()
+		戻る
+	・{Fpsadjuster}_fps
+	・SetFps(val)～
+		_fps→SetFPS(val)
+	・Start()～
+		(キー状態(KEY_ESC)==0)間
+			もし、_screencolor == 0ならば、
+				BufferScreen→BlackClear()
+			違えばもし、_screencolor == 16777215ならば、
+				BufferScreen→WhiteClear()
+			違えば、
+				BufferScreen→UserClear()
+			自身→Main()
+			BufferScreen→Flip()
+			母艦再描画()
+			_fps→Fix()
+			
+		ここまで
+	・Main()～
+		#抽象メソッド
+		#使用する際にこのメソッドを上書きして使って下さい。
+		戻る
 
-●再描画Ex(x,y,w,h)
-	InvalidateRect((母艦ハンドル),POINTER(RECT変換(x,y,w,h)),TRUE)
 
-●InvalidateRect(h,i,e) =DLL("user32.dll",
-"BOOL InvalidateRect(
-HWND hWnd, // handle of window with changed update region
-POINTER *lpRect,
-BOOL bErase // erase-background flag
-);")
+#-----------------------------------------------------------------------
+
+/* 継承サンプル *
+ *
+ * UserInit()とMain()は抽象メソッドのため、GAME_gのメソッドをオーバーライドします。
+ * UserInitはGAME_gのInitの終了後1度だけ、MainはStart内部で繰り返し実行されます。
+*/
+
+■SampleMyGame + GAME_g
+	・UserInit()～
+		AをGraphic_gとして作成
+		A→Load(`Magicsquare_b.bmp`)
+		A→x =10
+		
+	・Main()～
+		P(A→x)
+		A→Draw()
